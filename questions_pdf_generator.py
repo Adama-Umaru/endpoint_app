@@ -1,20 +1,24 @@
 import requests
 import pdfkit
+import smtplib
+from email.mime.text import MIMEText
 
-endpoint ="https://api.stackexchange.com/2.3/questions?site=stackoverflow&pagesize=50&sort=votes"
 num_questions = 50
 
 def fetch_questions(endpoint, num_questions):
+    # Function to fetch the questions from the API endpoint
     response = requests.get(endpoint)
     data = response.json()
     questions = data["items"][:num_questions]
     return questions
 
 def create_pdf(questions):
+    # Function to create a PDF containing the questions
     html_content = "<html><head><style>img {max-width: 50%;}</style></head><body>"
     question_number = 1
 
     for question in questions:
+        # Extract question details
         title = question["title"]
         views = question["view_count"]
         link = question["link"]
@@ -23,8 +27,9 @@ def create_pdf(questions):
         if "imageURL" in question:
             image_url = question["imageURL"]
         else:
-            image_url = ""  # Set a default value if the key is missing
+            image_url = ""
 
+        # Generate HTML content for the question
         html_content += f"<h2>{question_number}. {title}</h2>"
         html_content += f"<p>Views: {views}</p>"
         html_content += f'<a href="{link}">{link}</a>'
@@ -33,15 +38,53 @@ def create_pdf(questions):
         question_number += 1
 
     html_content += "</body></html>"
-    
 
-    
+    # Configure PDFKit and generate the PDF
     config = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe')
     pdfkit.from_string(html_content, "questions.pdf", configuration=config)
 
+def send_email(recipient, subject, text_content):
+    # Function to send the extracted questions to the provided email address
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    sender_email = "umaruadama@gmail.com"
+    password = "bqhbsstohrrxddit"
+
+    # Create the email message
+    message = MIMEText(text_content, "html")
+    message["Subject"] = subject
+    message["From"] = sender_email
+    message["To"] = recipient
+
+    # Connect to the SMTP server, login, and send the message
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        server.login(sender_email, password)
+        server.send_message(message)
+
+def main():
+    # Main function to execute the program
+    url = input("Enter the URL of the site: ")
+    #url example = api.stackexchange.com/2.3/questions?site=stackoverflow&pagesize=50&sort=votes
+    endpoint = f"https://{url}"
+    name = input("Enter your name: ")
+    email = input("Enter your email: ")
+
+    # Fetch the questions from the API
+    questions = fetch_questions(endpoint, num_questions)
+
+    # Generate the text content for the email
+    text_content = "\n".join([f"{question['title']}\nViews: {question['view_count']}\nLink: {question['link']}\n" for question in questions])
+
+    # Create the PDF with the questions
+    create_pdf(questions)
+
+    # Send the email with the extracted questions
+    subject = f'<span style="font-weight:bold; color:red;">Extracted Questions for {name}</span>'
+    send_email(email, subject, text_content)
+
+    print("PDF created and email sent successfully.")
+    input("Press enter to quit")
 
 if __name__ == "__main__":
-    endpoint = input("Enter the endpoint URL: ")
-    questions = fetch_questions(endpoint, num_questions)
-    create_pdf(questions)
-    print("PDF created successfully.")
+    main()
