@@ -1,5 +1,5 @@
 
-The code you provided is a Python script that fetches questions from an API endpoint, creates a PDF document containing the questions, and sends the questions via email. Here's a breakdown of the code:
+The code provided is a Python script that fetches questions from an API endpoint, creates a PDF document containing the questions, and sends the questions via email. Here's a breakdown of the code:
 
 The code imports necessary modules such as requests, pdfkit, smtplib, and MIMEText.
 
