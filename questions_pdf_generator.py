@@ -73,15 +73,40 @@ def main():
     # Fetch the questions from the API
     questions = fetch_questions(endpoint, num_questions)
 
-    # Generate the text content for the email
-    text_content = "\n".join([f"{question['title']}\nViews: {question['view_count']}\nLink: {question['link']}\n" for question in questions])
+    # Generate the HTML content for the email
+    html_content = "<html><body>"
+    html_content += f"<h2>Extracted Questions for {name}</h2>"
+    html_content += "<ul>"
 
+    for question in questions:
+        # Extract question details
+        title = question["title"]
+        views = question["view_count"]
+        link = question["link"]
+
+        # Check if the "imageURL" key exists in the dictionary
+        if "imageURL" in question:
+            image_url = question["imageURL"]
+        else:
+            image_url = ""
+
+        # Generate HTML content for each question
+        html_content += "<li>"
+        html_content += f"<h3>{title}</h3>"
+        html_content += f"<p>Views: {views}</p>"
+        html_content += f'<p><a href="{link}">{link}</a></p>'
+        html_content += f'<img src="{image_url}">'
+        html_content += "</li>"
+
+        html_content += "</ul>"
+        html_content += "</body></html>"
+    
     # Create the PDF with the questions
     create_pdf(questions)
 
     # Send the email with the extracted questions
-    subject = f'<span style="font-weight:bold; color:red;">Extracted Questions for {name}</span>'
-    send_email(email, subject, text_content)
+    subject = f'Extracted Questions for {name}'
+    send_email(email, subject, html_content)
 
     print("PDF created and email sent successfully.")
     input("Press enter to quit")
